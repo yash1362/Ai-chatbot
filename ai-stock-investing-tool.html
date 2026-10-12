@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Stock Investing Tool</title>
+  <style>
+    :root {
+      --bg: #081120;
+      --panel: #101a2b;
+      --panel2: #13233b;
+      --line: #243b5d;
+      --text: #edf3ff;
+      --muted: #9bb0d0;
+      --primary: #4f46e5;
+      --secondary: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --cyan: #38bdf8;
+      --shadow: rgba(2, 6, 23, 0.55);
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      background: linear-gradient(180deg, #070d19 0%, #0f172a 100%);
+      color: var(--text);
+    }
+
+    .container {
+      max-width: 1380px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .title h1 {
+      margin: 0;
+      font-size: clamp(2rem, 3vw, 3.1rem);
+    }
+
+    .title .sub {
+      color: var(--muted);
+      margin-top: 8px;
+      font-size: 0.95rem;
+    }
+
+    .badge {
+      background: rgba(79,70,229,0.15);
+      border: 1px solid rgba(79,70,229,0.7);
+      color: #dfe6ff;
+      padding: 10px 18px;
+      border-radius: 999px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+
+    .tab-btn {
+      border: 1px solid var(--line);
+      background: #0d1728;
+      color: var(--text);
+      padding: 12px 18px;
+      border-radius: 10px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .tab-btn.active {
+      background: linear-gradient(135deg, var(--primary), #7c3aed);
+      border-color: transparent;
+      box-shadow: 0 10px 22px rgba(79,70,229,0.45);
+    }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    .panel {
+      background: rgba(17, 24, 39, 0.96);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 22px;
+      box-shadow: 0 18px 36px var(--shadow);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 18px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .field label {
+      color: var(--muted);
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+    }
+
+    .field input, .field select, .field textarea {
+      width: 100%;
+      padding: 10px 12px;
+      background: #091421;
+      color: var(--text);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      font-size: 0.95rem;
+    }
+
+    .field textarea {
+      min-height: 110px;
+      resize: vertical;
+    }
+
+    .action {
+      margin-top: 18px;
+      width: 100%;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      color: white;
+      border: none;
+      border-radius: 12px;
+      padding: 14px 18px;
+      font-weight: 800;
+      font-size: 1rem;
+      cursor: pointer;
+      box-shadow: 0 18px 30px rgba(16,185,129,0.22);
+    }
+
+    .score-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 16px;
+      margin-top: 20px;
+    }
+
+    .score-card {
+      background: linear-gradient(180deg, rgba(79,70,229,0.12), rgba(17,24,39,0.98));
+      border: 1px solid rgba(79,70,229,0.5);
+      border-radius: 14px;
+      padding: 18px;
+      text-align: center;
+    }
+
+    .score-card .label {
+      color: var(--muted);
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 8px;
+    }
+
+    .score-card .value {
+      font-size: clamp(1.6rem, 2vw, 2.2rem);
+      font-weight: 800;
+    }
+
+    .result-box {
+      margin-top: 24px;
+      background: #0a1323;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 20px;
+      display: none;
+    }
+
+    .result-box.visible { display: block; }
+
+    .recommendation {
+      display: inline-block;
+      padding: 8px 14px;
+      border-radius: 999px;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      margin-bottom: 18px;
+    }
+
+    .buy { background: rgba(16,185,129,0.15); color: #bbf7d0; border: 1px solid rgba(16,185,129,0.65); }
+    .hold { background: rgba(245,158,11,0.15); color: #fde68a; border: 1px solid rgba(245,158,11,0.7); }
+    .sell { background: rgba(239,68,68,0.15); color: #fecaca; border: 1px solid rgba(239,68,68,0.7); }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 14px;
+      margin-top: 12px;
+    }
+
+    .mini {
+      background: #0b1322;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 14px;
+    }
+
+    .mini h4 {
+      margin: 0 0 8px;
+      color: var(--muted);
+      font-size: 0.78rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .mini p {
+      margin: 0;
+      font-weight: 700;
+      font-size: 1.12rem;
+    }
+
+    .bar-chart {
+      margin-top: 18px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .bar-row {
+      display: grid;
+      grid-template-columns: 180px 1fr 60px;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .bar-label {
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .bar-track {
+      height: 18px;
+      border-radius: 999px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      background: rgba(148,163,184,0.1);
+    }
+
+    .bar-fill {
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #22c55e, #4f46e5);
+    }
+
+    .bar-value {
+      text-align: right;
+      font-weight: 800;
+    }
+
+    .reason-list {
+      margin: 10px 0 0 18px;
+      padding: 0;
+      color: #dfeaf9;
+      line-height: 1.75;
+    }
+
+    @media (max-width: 700px) {
+      .bar-row { grid-template-columns: 1fr; }
+      .bar-value { text-align: left; }
+      .container { padding: 16px; }
+      .panel { padding: 18px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="title">
+        <h1>AI Stock Investing Tool</h1>
+        <div class="sub">Market analysis based on promoters, order book, conference calls, valuation, and competition</div>
+      </div>
+      <div class="badge">INVESTABILITY</div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab-btn active" data-target="promoter">Promoter</button>
+      <button class="tab-btn" data-target="orderbook">Order Book</button>
+      <button class="tab-btn" data-target="conference">Conference</button>
+      <button class="tab-btn" data-target="valuation">Valuation</button>
+      <button class="tab-btn" data-target="competition">Competition</button>
+      <button class="tab-btn" data-target="dashboard">Dashboard</button>
+    </div>
+
+    <div id="promoter" class="tab-panel active">
+      <div class="panel">
+        <h2>Promoter Analysis</h2>
+        <div class="grid">
+          <div class="field"><label>Company Name</label><input id="companyName" value="Example Corp" /></div>
+          <div class="field"><label>Industry</label><input id="industry" value="IT Services" /></div>
+          <div class="field"><label>Promoter Holding %</label><input id="promoterHolding" type="number" value="58.4" step="0.1" /></div>
+          <div class="field"><label>Previous Holding %</label><input id="pastPromoterHolding" type="number" value="51.7" step="0.1" /></div>
+          <div class="field"><label>Pledge %</label><input id="pledge" type="number" value="7.8" step="0.1" /></div>
+          <div class="field"><label>Track Record</label>
+            <select id="trackRecord">
+              <option value="excellent">Excellent</option>
+              <option value="good" selected>Good</option>
+              <option value="average">Average</option>
+              <option value="poor">Poor</option>
+            </select>
+          </div>
+          <div class="field"><label>Promoter Buy/Sell (₹ Cr)</label><input id="promoterFlow" type="number" value="240" /></div>
+          <div class="field"><label>Governance Score</label><input id="governance" type="number" value="82" min="0" max="100" /></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="orderbook" class="tab-panel">
+      <div class="panel">
+        <h2>Order Book</h2>
+        <div class="grid">
+          <div class="field"><label>Buy Orders (₹ Cr)</label><input id="buyOrders" type="number" value="950" /></div>
+          <div class="field"><label>Sell Orders (₹ Cr)</label><input id="sellOrders" type="number" value="640" /></div>
+          <div class="field"><label>Bid-Ask Spread %</label><input id="spread" type="number" value="0.32" step="0.01" /></div>
+          <div class="field"><label>Order Book Depth</label><input id="depth" type="number" value="2400" /></div>
+          <div class="field"><label>FII Net Position (₹ Cr)</label><input id="fii" type="number" value="320" /></div>
+          <div class="field"><label>DII Net Position (₹ Cr)</label><input id="dii" type="number" value="210" /></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="conference" class="tab-panel">
+      <div class="panel">
+        <h2>Conference Call</h2>
+        <div class="grid">
+          <div class="field"><label>Management Tone</label>
+            <select id="tone">
+              <option value="very_positive" selected>Very Positive</option>
+              <option value="positive">Positive</option>
+              <option value="neutral">Neutral</option>
+              <option value="cautious">Cautious</option>
+            </select>
+          </div>
+          <div class="field"><label>Guidance Quality</label>
+            <select id="guidanceQuality">
+              <option value="excellent" selected>Excellent</option>
+              <option value="good">Good</option>
+              <option value="average">Average</option>
+              <option value="poor">Poor</option>
+            </select>
+          </div>
+          <div class="field"><label>Revenue Growth Guidance %</label><input id="revenueGrowth" type="number" value="19.2" step="0.1" /></div>
+          <div class="field"><label>EBITDA Margin %</label><input id="ebitdaMargin" type="number" value="25.3" step="0.1" /></div>
+          <div class="field" style="grid-column: 1 / -1;"><label>Conference Call Summary</label><textarea id="conferenceSummary">Demand remained healthy across core enterprise accounts. The company sees continued expansion in recurring revenue and margin efficiency from automation and better pricing discipline.</textarea></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="valuation" class="tab-panel">
+      <div class="panel">
+        <h2>Valuation & Growth</h2>
+        <div class="grid">
+          <div class="field"><label>Share Price (₹)</label><input id="sharePrice" type="number" value="420" /></div>
+          <div class="field"><label>Market Cap (₹ Cr)</label><input id="marketCap" type="number" value="52000" /></div>
+          <div class="field"><label>P/E Ratio</label><input id="pe" type="number" value="28.5" step="0.1" /></div>
+          <div class="field"><label>Industry P/E</label><input id="industryPe" type="number" value="24.2" step="0.1" /></div>
+          <div class="field"><label>ROE %</label><input id="roe" type="number" value="18.4" step="0.1" /></div>
+          <div class="field"><label>EPS Growth %</label><input id="epsGrowth" type="number" value="17.8" step="0.1" /></div>
+          <div class="field"><label>Dividend Yield %</label><input id="dividendYield" type="number" value="1.3" step="0.1" /></div>
+          <div class="field"><label>Debt/Equity</label><input id="debtEquity" type="number" value="0.34" step="0.01" /></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="competition" class="tab-panel">
+      <div class="panel">
+        <h2>Competition Analysis</h2>
+        <div class="grid">
+          <div class="field"><label>Market Share %</label><input id="marketShare" type="number" value="28.5" step="0.1" /></div>
+          <div class="field"><label>Direct Competitors</label><input id="competitorCount" type="number" value="5" /></div>
+          <div class="field"><label>Top Competitors</label><input id="competitors" value="Apex Tech, Solstice, DigiCore, NxtWave" /></div>
+          <div class="field"><label>Leader Revenue (₹ Cr)</label><input id="leaderRevenue" type="number" value="76000" /></div>
+          <div class="field" style="grid-column: 1 / -1;"><label>Competitive Strengths</label><textarea id="strengths">Strong customer retention, superior enterprise distribution, recurring revenue engine, cost optimization, and differentiated service quality.</textarea></div>
+          <div class="field" style="grid-column: 1 / -1;"><label>Key Risks</label><textarea id="risks">Demand sluggishness in discretionary spend, pricing pressure from smaller entrants, and rising execution cost in talent-heavy segments.</textarea></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="dashboard" class="tab-panel">
+      <div class="panel">
+        <h2>Investment Dashboard</h2>
+        <div class="score-grid">
+          <div class="score-card"><div class="label">Overall</div><div class="value" id="overallScore">0</div></div>
+          <div class="score-card"><div class="label">Promoter</div><div class="value" id="promoterScore">0</div></div>
+          <div class="score-card"><div class="label">Order Book</div><div class="value" id="orderScore">0</div></div>
+          <div class="score-card"><div class="label">Management</div><div class="value" id="managementScore">0</div></div>
+          <div class="score-card"><div class="label">Valuation</div><div class="value" id="valuationScore">0</div></div>
+          <div class="score-card"><div class="label">Competition</div><div class="value" id="competitionScore">0</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top: 24px;">
+      <button class="action" id="runAnalysis">Generate Advanced Analysis</button>
+      <div id="analysisResult" class="result-box">
+        <div id="recommendationBadge" class="recommendation">HOLD</div>
+        <div id="summaryGrid" class="summary-grid"></div>
+        <div id="barChart" class="bar-chart"></div>
+        <div style="margin-top: 18px;">
+          <h3>Investment Summary</h3>
+          <ul id="reasonsList" class="reason-list"></ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function clamp(value, min, max) {
+      return Math.min(Math.max(value, min), max);
+    }
+
+    function getNum(id) {
+      return Number(document.getElementById(id).value || 0);
+    }
+
+    function getText(id) {
+      return document.getElementById(id).value || "";
+    }
+
+    function toCategory(score) {
+      if (score >= 75) return { label: "BUY", className: "buy" };
+      if (score >= 55) return { label: "HOLD", className: "hold" };
+      return { label: "SELL", className: "sell" };
+    }
+
+    function renderSummary(summary) {
+      const cards = [
+        ["Market Cap", `₹${summary.marketCap.toLocaleString()} Cr`],
+        ["Share Price", `₹${summary.sharePrice.toLocaleString()}`],
+        ["P/E", `${summary.pe.toFixed(1)}x`],
+        ["ROE", `${summary.roe.toFixed(1)}%`],
+        ["Promoter Holding", `${summary.promoterHolding.toFixed(1)}%`],
+        ["Market Share", `${summary.marketShare.toFixed(1)}%`]
+      ];
+
+      document.getElementById("summaryGrid").innerHTML = cards.map(([label, value]) => `
+        <div class="mini">
+          <h4>${label}</h4>
+          <p>${value}</p>
+        </div>
+      `).join("");
+    }
+
+    function renderBars(data) {
+      const rows = [
+        ["Promoter", data.promoter],
+        ["Order Book", data.orderBook],
+        ["Management", data.management],
+        ["Valuation", data.valuation],
+        ["Competition", data.competition]
+      ];
+
+      document.getElementById("barChart").innerHTML = rows.map(([label, value]) => `
+        <div class="bar-row">
+          <div class="bar-label">${label}</div>
+          <div class="bar-track">
+            <div class="bar-fill" style="width:${clamp(value, 0, 100)}%"></div>
+          </div>
+          <div class="bar-value">${Math.round(value)}</div>
+        </div>
+      `).join("");
+    }
+
+    function renderReasons(reasons) {
+      document.getElementById("reasonsList").innerHTML = reasons.map(r => `<li>${r}</li>`).join("");
+    }
+
+    function analyze() {
+      const promoterHolding = getNum("promoterHolding");
+      const pastPromoterHolding = getNum("pastPromoterHolding");
+      const pledge = getNum("pledge");
+      const trackRecord = document.getElementById("trackRecord").value;
+      const promoterFlow = getNum("promoterFlow");
+      const governance = getNum("governance");
+
+      const buyOrders = getNum("buyOrders");
+      const sellOrders = getNum("sellOrders");
+      const spread = getNum("spread");
+      const depth = getNum("depth");
+      const fii = getNum("fii");
+      const dii = getNum("dii");
+
+      const tone = document.getElementById("tone").value;
+      const guidanceQuality = document.getElementById("guidanceQuality").value;
+      const revenueGrowth = getNum("revenueGrowth");
+      const ebitdaMargin = getNum("ebitdaMargin");
+
+      const sharePrice = getNum("sharePrice");
+      const marketCap = getNum("marketCap");
+      const pe = getNum("pe");
+      const industryPe = getNum("industryPe");
+      const roe = getNum("roe");
+      const epsGrowth = getNum("epsGrowth");
+      const dividendYield = getNum("dividendYield");
+      const debtEquity = getNum("debtEquity");
+
+      const marketShare = getNum("marketShare");
+      const competitorCount = getNum("competitorCount");
+      const leaderRevenue = getNum("leaderRevenue");
+
+      const promoterTrend = promoterHolding - pastPromoterHolding;
+
+      const promoterScore = clamp(
+        (promoterHolding / 60) * 28 +
+        (promoterTrend > 0 ? 12 : promoterTrend < 0 ? 0 : 6) +
+        (trackRecord === "excellent" ? 20 : trackRecord === "good" ? 14 : trackRecord === "average" ? 8 : 2) +
+        (governance / 100) * 16 +
+        (promoterFlow > 0 ? 8 : 0) -
+        (pledge * 1.2),
+        0,
+        100
+      );
+
+      const netOrders = buyOrders - sellOrders;
+      const orderBookScore = clamp(
+        ((netOrders / 400) * 28) +
+        ((depth / 3000) * 20) +
+        (((fii + dii) / 600) * 18) -
+        (spread * 25),
+        0,
+        100
+      );
+
+      const toneMap = { very_positive: 17, positive: 13, neutral: 9, cautious: 5 };
+      const guidanceMap = { excellent: 18, good: 14, average: 9, poor: 4 };
+      const managementScore = clamp(
+        toneMap[tone] + guidanceMap[guidanceQuality] + (revenueGrowth / 20) * 14 + (ebitdaMargin / 30) * 12,
+        0,
+        100
+      );
+
+      const valuationGap = industryPe - pe;
+      const valuationScore = clamp(
+        18 + (valuationGap * 3) + (roe / 20) * 18 + (epsGrowth / 20) * 18 + (dividendYield * 3) - (debtEquity * 10),
+        0,
+        100
+      );
+
+      const competitionScore = clamp(
+        (marketShare / 35) * 32 +
+        (competitorCount < 5 ? 12 : competitorCount <= 7 ? 8 : 4) +
+        ((marketCap / leaderRevenue) * 12),
+        0,
+        100
+      );
+
+      const overallScore = clamp(
+        promoterScore * 0.25 +
+        orderBookScore * 0.2 +
+        managementScore * 0.2 +
+        valuationScore * 0.2 +
+        competitionScore * 0.15,
+        0,
+        100
+      );
+
+      const category = toCategory(overallScore);
+
+      const reasons = [];
+      if (promoterHolding > pastPromoterHolding) {
+        reasons.push(`Promoters increased their stake from ${pastPromoterHolding.toFixed(1)}% to ${promoterHolding.toFixed(1)}%, a strong positive signal.`);
+      } else if (promoterHolding < pastPromoterHolding) {
+        reasons.push(`Promoter holding dropped from ${pastPromoterHolding.toFixed(1)}% to ${promoterHolding.toFixed(1)}%; caution is warranted.`);
+      } else {
+        reasons.push(`Promoter holding stayed steady, which is neutral but not strongly bullish.`);
+      }
+
+      if (netOrders > 0) {
+        reasons.push(`Order book sentiment is positive with net demand of ₹${netOrders.toLocaleString()} Cr.`);
+      } else {
+        reasons.push(`Order flow is weak or negative, suggesting selling pressure in the near term.`);
+      }
+
+      reasons.push(`Management tone is ${tone.replace('_', ' ')} and guidance quality is ${guidanceQuality}, pointing to ${guidanceQuality === 'excellent' || guidanceQuality === 'good' ? 'healthy visibility' : 'some uncertainty'} around execution.`);
+
+      if (pe <= industryPe) {
+        reasons.push(`The stock is reasonably valued relative to peers, which lowers valuation risk.`);
+      } else {
+        reasons.push(`The stock trades above peer valuation, so earnings quality needs to remain strong to justify the premium.`);
+      }
+
+      if (marketShare >= 20) {
+        reasons.push(`The company has meaningful market share, which supports pricing power and defensibility.`);
+      } else {
+        reasons.push(`Competitive position remains moderate; it needs stronger share gains to improve long-term resilience.`);
+      }
+
+      document.getElementById("overallScore").textContent = Math.round(overallScore);
+      document.getElementById("promoterScore").textContent = Math.round(promoterScore);
+      document.getElementById("orderScore").textContent = Math.round(orderBookScore);
+      document.getElementById("managementScore").textContent = Math.round(managementScore);
+      document.getElementById("valuationScore").textContent = Math.round(valuationScore);
+      document.getElementById("competitionScore").textContent = Math.round(competitionScore);
+
+      const rec = document.getElementById("recommendationBadge");
+      rec.textContent = category.label;
+      rec.className = `recommendation ${category.className}`;
+
+      renderSummary({
+        marketCap,
+        sharePrice,
+        pe,
+        roe,
+        promoterHolding,
+        marketShare
+      });
+
+      renderBars({
+        promoter: promoterScore,
+        orderBook: orderBookScore,
+        management: managementScore,
+        valuation: valuationScore,
+        competition: competitionScore
+      });
+
+      renderReasons(reasons);
+      document.getElementById("analysisResult").classList.add("visible");
+    }
+
+    document.querySelectorAll(".tab-btn").forEach((button) => {
+      button.addEventListener("click", () => {
+        document.querySelectorAll(".tab-btn").forEach(btn => btn.classList.remove("active"));
+        document.querySelectorAll(".tab-panel").forEach(panel => panel.classList.remove("active"));
+        button.classList.add("active");
+        document.getElementById(button.dataset.target).classList.add("active");
+      });
+    });
+
+    document.getElementById("runAnalysis").addEventListener("click", analyze);
+  </script>
+</body>
+</html>
+```
+
+This is a fully working front-end stock analysis dashboard. It gives a quantitative score with a BUY/HOLD/SELL recommendation based on weighted criteria you requested. It is appropriate for a simple investor-facing web prototype and can be extended into a more advanced tool with API integration and live market data later.
+
+If you want, I can now create the next advanced version with:
+- real stock data fetching from APIs
+- peer comparison tables
+- search by ticker
+- charts for valuation and order flow
+- export to CSV or PDF
+- live Indian stock market screening
+
+I’ll generate that next. 
