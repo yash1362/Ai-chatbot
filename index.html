@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Integrated Stock Investing Tool</title>
+  <style>
+    :root {
+      --bg: #07111d;
+      --panel: #101c2d;
+      --panel2: #132742;
+      --line: #2b4467;
+      --text: #edf4ff;
+      --muted: #9db0cf;
+      --primary: #4f46e5;
+      --secondary: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --cyan: #38bdf8;
+      --shadow: rgba(2, 6, 23, 0.5);
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      background: linear-gradient(180deg, #07111d 0%, #0f172a 100%);
+      color: var(--text);
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    .container {
+      max-width: 1500px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+
+    .title h1 {
+      margin: 0;
+      font-size: clamp(2rem, 3vw, 3rem);
+    }
+
+    .subtitle {
+      color: var(--muted);
+      margin-top: 8px;
+      font-size: 0.95rem;
+    }
+
+    .badge {
+      background: rgba(79,70,229,0.15);
+      border: 1px solid rgba(79,70,229,0.7);
+      color: #dfe7ff;
+      padding: 10px 18px;
+      border-radius: 999px;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+    }
+
+    .toolbar {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+
+    .toolbar input, .toolbar select, .toolbar button {
+      background: rgba(10,20,33,0.9);
+      color: var(--text);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 0.96rem;
+    }
+
+    .toolbar button, .action, .watchlist-btn {
+      cursor: pointer;
+      font-weight: 800;
+    }
+
+    .toolbar button {
+      background: linear-gradient(135deg, var(--primary), #7c3aed);
+      border: none;
+      color: white;
+      padding: 10px 18px;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 430px 1fr;
+      gap: 20px;
+    }
+
+    .panel {
+      background: rgba(17,24,39,0.97);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 22px;
+      box-shadow: 0 18px 36px var(--shadow);
+    }
+
+    .section-heading {
+      font-size: 1.2rem;
+      margin: 22px 0 12px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .field label {
+      color: var(--muted);
+      font-size: 0.75rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+
+    .field input, .field select, .field textarea {
+      width: 100%;
+      background: #0a1323;
+      color: var(--text);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 0.96rem;
+    }
+
+    .field textarea {
+      min-height: 110px;
+      resize: vertical;
+    }
+
+    .action {
+      width: 100%;
+      margin-top: 18px;
+      border: none;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      color: white;
+      font-size: 1rem;
+      padding: 14px 18px;
+      box-shadow: 0 18px 30px rgba(16,185,129,0.18);
+    }
+
+    .watchlist-btn {
+      margin-top: 10px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: rgba(10,20,33,0.9);
+      color: var(--text);
+      padding: 10px 12px;
+    }
+
+    .score-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 14px;
+      margin-top: 18px;
+    }
+
+    .score-card {
+      background: linear-gradient(180deg, rgba(79,70,229,0.14), rgba(17,24,39,0.98));
+      border: 1px solid rgba(79,70,229,0.55);
+      border-radius: 14px;
+      padding: 18px;
+      text-align: center;
+    }
+
+    .score-card .label {
+      color: var(--muted);
+      font-size: 0.78rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .score-card .value {
+      font-size: clamp(1.5rem, 1.8vw, 2.2rem);
+      font-weight: 800;
+    }
+
+    .result-box {
+      margin-top: 22px;
+      display: none;
+      background: #0a1323;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 20px;
+    }
+
+    .result-box.visible {
+      display: block;
+    }
+
+    .recommendation {
+      display: inline-block;
+      padding: 8px 14px;
+      border-radius: 999px;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      margin-bottom: 16px;
+    }
+
+    .buy { background: rgba(16,185,129,0.15); color: #bbf7d0; border: 1px solid rgba(16,185,129,0.7); }
+    .hold { background: rgba(245,158,11,0.15); color: #fcd34d; border: 1px solid rgba(245,158,11,0.7); }
+    .sell { background: rgba(239,68,68,0.15); color: #fecaca; border: 1px solid rgba(239,68,68,0.7); }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .mini {
+      background: #0b1322;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px;
+    }
+
+    .mini h4 {
+      margin: 0 0 8px;
+      color: var(--muted);
+      font-size: 0.75rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .mini p {
+      margin: 0;
+      font-weight: 700;
+      font-size: 1rem;
+    }
+
+    .bar-chart {
+      display: grid;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .bar-row {
+      display: grid;
+      grid-template-columns: 160px 1fr 60px;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .bar-label {
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .bar-track {
+      height: 18px;
+      border-radius: 999px;
+      background: rgba(148,163,184,0.12);
+      border: 1px solid var(--line);
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #22c55e, #4f46e5);
+    }
+
+    .bar-value {
+      text-align: right;
+      font-weight: 800;
+    }
+
+    .peer-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 18px;
+    }
+
+    .peer-table th, .peer-table td {
+      padding: 12px 10px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+    }
+
+    .peer-table th {
+      color: var(--muted);
+      font-size: 0.78rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .reason-list {
+      padding-left: 18px;
+      margin: 10px 0 0 0;
+      color: #dfeaf9;
+      line-height: 1.8;
+    }
+
+    .watchlist-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 18px;
+    }
+
+    .watchlist-table th, .watchlist-table td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+    }
+
+    .watchlist-table th {
+      color: var(--muted);
+      font-size: 0.78rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    @media (max-width: 980px) {
+      .layout { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 700px) {
+      .bar-row { grid-template-columns: 1fr; }
+      .bar-value { text-align: left; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="title">
+        <h1>Integrated Stock Investing Tool</h1>
+        <div class="subtitle">Combined screener, scoring engine, watchlist, peer comparison, and investor dashboard</div>
+      </div>
+      <div class="badge">INVESTABILITY</div>
+    </div>
+
+    <div class="toolbar">
+      <input id="searchTicker" value="EXAMPLE" placeholder="Ticker Symbol" />
+      <select id="screenMode">
+        <option value="balanced" selected>Balanced</option>
+        <option value="growth">Growth Focus</option>
+        <option value="value">Value Focus</option>
+        <option value="quality">Quality Focus</option>
+      </select>
+      <button id="screenBtn">Run Screener</button>
+      <button id="demoBtn" style="background: linear-gradient(135deg, #0ea5e9, #1d4ed8);">Load Demo</button>
+    </div>
+
+    <div class="layout">
+      <div class="panel">
+        <h2>Company Snapshot</h2>
+        <div class="grid">
+          <div class="field"><label>Company Name</label><input id="companyName" value="Example Corp" /></div>
+          <div class="field"><label>Ticker</label><input id="ticker" value="EXAMPLE" /></div>
+          <div class="field"><label>Industry</label><input id="industry" value="IT Services" /></div>
+          <div class="field"><label>Current Price (₹)</label><input id="sharePrice" type="number" value="420" /></div>
+          <div class="field"><label>Market Cap (₹ Cr)</label><input id="marketCap" type="number" value="52000" /></div>
+          <div class="field"><label>Market Share %</label><input id="marketShare" type="number" value="28.5" step="0.1" /></div>
+        </div>
+
+        <div class="section-heading">Promoter Analysis</div>
+        <div class="grid">
+          <div class="field"><label>Promoter Holding %</label><input id="promoterHolding" type="number" value="58.4" step="0.1" /></div>
+          <div class="field"><label>Previous Holding %</label><input id="pastPromoterHolding" type="number" value="51.7" step="0.1" /></div>
+          <div class="field"><label>Pledge %</label><input id="pledge" type="number" value="7.8" step="0.1" /></div>
+          <div class="field"><label>Track Record</label>
+            <select id="trackRecord">
+              <option value="excellent">Excellent</option>
+              <option value="good" selected>Good</option>
+              <option value="average">Average</option>
+              <option value="poor">Poor</option>
+            </select>
+          </div>
+          <div class="field"><label>Promoter Flow (₹ Cr)</label><input id="promoterFlow" type="number" value="240" /></div>
+          <div class="field"><label>Governance Score</label><input id="governance" type="number" value="82" min="0" max="100" /></div>
+        </div>
+
+        <div class="section-heading">Order Book</div>
+        <div class="grid">
+          <div class="field"><label>Buy Orders (₹ Cr)</label><input id="buyOrders" type="number" value="950" /></div>
+          <div class="field"><label>Sell Orders (₹ Cr)</label><input id="sellOrders" type="number" value="640" /></div>
+          <div class="field"><label>Bid-Ask Spread %</label><input id="spread" type="number" value="0.32" step="0.01" /></div>
+          <div class="field"><label>Order Book Depth</label><input id="depth" type="number" value="2400" /></div>
+          <div class="field"><label>FII Net (₹ Cr)</label><input id="fii" type="number" value="320" /></div>
+          <div class="field"><label>DII Net (₹ Cr)</label><input id="dii" type="number" value="210" /></div>
+        </div>
+
+        <div class="section-heading">Conference Call</div>
+        <div class="grid">
+          <div class="field"><label>Management Tone</label>
+            <select id="tone">
+              <option value="very_positive" selected>Very Positive</option>
+              <option value="positive">Positive</option>
+              <option value="neutral">Neutral</option>
+              <option value="cautious">Cautious</option>
+            </select>
+          </div>
+          <div class="field"><label>Guidance Quality</label>
+            <select id="guidanceQuality">
+              <option value="excellent" selected>Excellent</option>
+              <option value="good">Good</option>
+              <option value="average">Average</option>
+              <option value="poor">Poor</option>
+            </select>
+          </div>
+          <div class="field"><label>Revenue Growth %</label><input id="revenueGrowth" type="number" value="19.2" step="0.1" /></div>
+          <div class="field"><label>EBITDA Margin %</label><input id="ebitdaMargin" type="number" value="25.3" step="0.1" /></div>
+          <div class="field" style="grid-column: 1 / -1;">
+            <label>Conference Summary</label>
+            <textarea id="conferenceSummary">Demand remained healthy across core enterprise accounts. The company sees continued expansion in recurring revenue and margin efficiency from automation and better pricing discipline.</textarea>
+          </div>
+        </div>
+
+        <div class="section-heading">Valuation & Competition</div>
+        <div class="grid">
+          <div class="field"><label>P/E Ratio</label><input id="pe" type="number" value="28.5" step="0.1" /></div>
+          <div class="field"><label>Industry P/E</label><input id="industryPe" type="number" value="24.2" step="0.1" /></div>
+          <div class="field"><label>ROE %</label><input id="roe" type="number" value="18.4" step="0.1" /></div>
+          <div class="field"><label>EPS Growth %</label><input id="epsGrowth" type="number" value="17.8" step="0.1" /></div>
+          <div class="field"><label>Dividend Yield %</label><input id="dividendYield" type="number" value="1.3" step="0.1" /></div>
+          <div class="field"><label>Debt/Equity</label><input id="debtEquity" type="number" value="0.34" step="0.01" /></div>
+          <div class="field"><label>Direct Competitors</label><input id="competitorCount" type="number" value="5" /></div>
+          <div class="field"><label>Leader Revenue (₹ Cr)</label><input id="leaderRevenue" type="number" value="76000" /></div>
+          <div class="field" style="grid-column: 1 / -1;">
+            <label>Competitive Strengths</label>
+            <textarea id="strengths">Strong customer retention, superior enterprise distribution, recurring revenue engine, cost optimization, and differentiated service quality.</textarea>
+          </div>
+          <div class="field" style="grid-column: 1 / -1;">
+            <label>Key Risks</label>
+            <textarea id="risks">Demand sluggishness in discretionary spend, pricing pressure from smaller entrants, and rising execution cost in talent-heavy segments.</textarea>
+          </div>
+        </div>
+
+        <button class="action" id="analyzeBtn">Analyze & Rank</button>
+        <button class="watchlist-btn" id="watchlistBtn">Add Current Stock to Watchlist</button>
+      </div>
+
+      <div class="panel">
+        <div class="score-grid">
+          <div class="score-card"><div class="label">Overall</div><div class="value" id="overallScore">0</div></div>
+          <div class="score-card"><div class="label">Promoter</div><div class="value" id="promoterScore">0</div></div>
+          <div class="score-card"><div class="label">Order Book</div><div class="value" id="orderScore">0</div></div>
+          <div class="score-card"><div class="label">Management</div><div class="value" id="managementScore">0</div></div>
+          <div class="score-card"><div class="label">Valuation</div><div class="value" id="valuationScore">0</div></div>
+          <div class="score-card"><div class="label">Competition</div><div class="value" id="competitionScore">0</div></div>
+        </div>
+
+        <div id="analysisResult" class="result-box">
+          <div id="recommendationBadge" class="recommendation">HOLD</div>
+          <div id="summaryGrid" class="summary-grid"></div>
+          <div id="barChart" class="bar-chart"></div>
+
+          <div style="margin-top: 20px;">
+            <h3>Peer Comparison</h3>
+            <table class="peer-table">
+              <thead>
+                <tr>
+                  <th>Peer</th>
+                  <th>Market Cap</th>
+                  <th>P/E</th>
+                  <th>ROE</th>
+                  <th>Growth</th>
+                  <th>Score</th>
+                </tr>
+              </thead>
+              <tbody id="peerTableBody"></tbody>
+            </table>
+          </div>
+
+          <div style="margin-top: 18px;">
+            <h3>Investment Summary</h3>
+            <ul id="reasonsList" class="reason-list"></ul>
+          </div>
+        </div>
+
+        <div style="margin-top: 25px;">
+          <h3>Watchlist</h3>
+          <table class="watchlist-table">
+            <thead>
+              <tr>
+                <th>Ticker</th>
+                <th>Company</th>
+                <th>Price</th>
+                <th>Score</th>
+                <th>Signal</th>
+              </tr>
+            </thead>
+            <tbody id="watchlistBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const demoStocks = {
+      EXAMPLE: {
+        companyName: "Example Corp",
+        industry: "IT Services",
+        sharePrice: 420,
+        marketCap: 52000,
+        marketShare: 28.5,
+        promoterHolding: 58.4,
+        pastPromoterHolding: 51.7,
+        pledge: 7.8,
+        trackRecord: "good",
+        promoterFlow: 240,
+        governance: 82,
+        buyOrders: 950,
+        sellOrders: 640,
+        spread: 0.32,
+        depth: 2400,
+        fii: 320,
+        dii: 210,
+        tone: "very_positive",
+        guidanceQuality: "excellent",
+        revenueGrowth: 19.2,
+        ebitdaMargin: 25.3,
+        pe: 28.5,
+        industryPe: 24.2,
+        roe: 18.4,
+        epsGrowth: 17.8,
+        dividendYield: 1.3,
+        debtEquity: 0.34,
+        competitorCount: 5,
+        leaderRevenue: 76000,
+        screenMode: "balanced"
+      },
+      INFY: {
+        companyName: "Infosys",
+        industry: "IT Services",
+        sharePrice: 1450,
+        marketCap: 760000,
+        marketShare: 34.2,
+        promoterHolding: 15.8,
+        pastPromoterHolding: 15.1,
+        pledge: 0,
+        trackRecord: "excellent",
+        promoterFlow: 140,
+        governance: 90,
+        buyOrders: 890,
+        sellOrders: 430,
+        spread: 0.28,
+        depth: 2100,
+        fii: 410,
+        dii: 220,
+        tone: "positive",
+        guidanceQuality: "excellent",
+        revenueGrowth: 16.4,
+        ebitdaMargin: 26.2,
+        pe: 24.8,
+        industryPe: 22.4,
+        roe: 21.5,
+        epsGrowth: 13.9,
+        dividendYield: 2.4,
+        debtEquity: 0.12,
+        competitorCount: 6,
+        leaderRevenue: 980000,
+        screenMode: "growth"
+      },
+      TCS: {
+        companyName: "Tata Consultancy Services",
+        industry: "IT Services",
+        sharePrice: 3560,
+        marketCap: 1460000,
+        marketShare: 31.4,
+        promoterHolding: 71.6,
+        pastPromoterHolding: 71.2,
+        pledge: 0,
+        trackRecord: "excellent",
+        promoterFlow: 180,
+        governance: 92,
+        buyOrders: 1200,
+        sellOrders: 760,
+        spread: 0.15,
+        depth: 2550,
+        fii: 340,
+        dii: 260,
+        tone: "very_positive",
+        guidanceQuality: "excellent",
+        revenueGrowth: 18.2,
+        ebitdaMargin: 28.4,
+        pe: 30.1,
+        industryPe: 26.8,
+        roe: 34.5,
+        epsGrowth: 15.8,
+        dividendYield: 3.0,
+        debtEquity: 0.09,
+        competitorCount: 7,
+        leaderRevenue: 1500000,
+        screenMode: "quality"
+      }
+    };
+
+    const watchlist = [];
+
+    function clamp(value, min, max) {
+      return Math.min(Math.max(value, min), max);
+    }
+
+    function getNum(id) {
+      return Number(document.getElementById(id).value || 0);
+    }
+
+    function setFormFromData(data) {
+      document.getElementById("companyName").value = data.companyName || "";
+      document.getElementById("ticker").value = data.ticker || "";
+      document.getElementById("industry").value = data.industry || "";
+      document.getElementById("sharePrice").value = data.sharePrice || 0;
+      document.getElementById("marketCap").value = data.marketCap || 0;
+      document.getElementById("marketShare").value = data.marketShare || 0;
+      document.getElementById("promoterHolding").value = data.promoterHolding || 0;
+      document.getElementById("pastPromoterHolding").value = data.pastPromoterHolding || 0;
+      document.getElementById("pledge").value = data.pledge || 0;
+      document.getElementById("trackRecord").value = data.trackRecord || "good";
+      document.getElementById("promoterFlow").value = data.promoterFlow || 0;
+      document.getElementById("governance").value = data.governance || 0;
+      document.getElementById("buyOrders").value = data.buyOrders || 0;
+      document.getElementById("sellOrders").value = data.sellOrders || 0;
+      document.getElementById("spread").value = data.spread || 0;
+      document.getElementById("depth").value = data.depth || 0;
+      document.getElementById("fii").value = data.fii || 0;
+      document.getElementById("dii").value = data.dii || 0;
+      document.getElementById("tone").value = data.tone || "positive";
+      document.getElementById("guidanceQuality").value = data.guidanceQuality || "good";
+      document.getElementById("revenueGrowth").value = data.revenueGrowth || 0;
+      document.getElementById("ebitdaMargin").value = data.ebitdaMargin || 0;
+      document.getElementById("pe").value = data.pe || 0;
+      document.getElementById("industryPe").value = data.industryPe || 0;
+      document.getElementById("roe").value = data.roe || 0;
+      document.getElementById("epsGrowth").value = data.epsGrowth || 0;
+      document.getElementById("dividendYield").value = data.dividendYield || 0;
+      document.getElementById("debtEquity").value = data.debtEquity || 0;
+      document.getElementById("competitorCount").value = data.competitorCount || 0;
+      document.getElementById("leaderRevenue").value = data.leaderRevenue || 0;
+      document.getElementById("screenMode").value = data.screenMode || "balanced";
+      document.getElementById("searchTicker").value = data.ticker || "";
+    }
+
+    function loadDemoStock(symbol) {
+      const stock = demoStocks[symbol];
+      if (!stock) return;
+      const data = { ...stock, ticker: symbol };
+      setFormFromData(data);
+      analyze();
+    }
+
+    function addToWatchlist(stock) {
+      const ticker = stock.ticker || document.getElementById("ticker").value;
+      const company = stock.companyName || document.getElementById("companyName").value;
+      const price = stock.sharePrice || getNum("sharePrice");
+      const score = stock.score || 0;
+      const signal = stock.signal || "HOLD";
+
+      const exists = watchlist.some(item => item.ticker === ticker);
+      if (!exists) {
+        watchlist.push({ ticker, company, price, score, signal });
+      } else {
+        const item = watchlist.find(i => i.ticker === ticker);
+        item.company = company;
+        item.price = price;
+        item.score = score;
+        item.signal = signal;
+      }
+
+      renderWatchlist();
+    }
+
+    function renderWatchlist() {
+      const tbody = document.getElementById("watchlistBody");
+      tbody.innerHTML = watchlist.map(item => `
+        <tr>
+          <td>${item.ticker}</td>
+          <td>${item.company}</td>
+          <td>₹${item.price.toLocaleString()}</td>
+          <td>${Math.round(item.score)}</td>
+          <td>${item.signal}</td>
+        </tr>
+      `).join("");
+    }
+
+    function renderSummary(summary) {
+      const cards = [
+        ["Ticker", summary.ticker],
+        ["Industry", summary.industry],
+        ["Market Cap", `₹${summary.marketCap.toLocaleString()} Cr`],
+        ["Price", `₹${summary.sharePrice.toLocaleString()}`],
+        ["P/E", `${summary.pe.toFixed(1)}x`],
+        ["ROE", `${summary.roe.toFixed(1)}%`],
+        ["Promoter Holding", `${summary.promoterHolding.toFixed(1)}%`],
+        ["Market Share", `${summary.marketShare.toFixed(1)}%`]
+      ];
+
+      document.getElementById("summaryGrid").innerHTML = cards.map(([label, value]) => `
+        <div class="mini">
+          <h4>${label}</h4>
+          <p>${value}</p>
+        </div>
+      `).join("");
+    }
+
+    function renderBars(values) {
+      const rows = [
+        ["Promoter", values.promoter],
+        ["Order Book", values.orderBook],
+        ["Management", values.management],
+        ["Valuation", values.valuation],
+        ["Competition", values.competition]
+      ];
+
+      document.getElementById("barChart").innerHTML = rows.map(([label, value]) => `
+        <div class="bar-row">
+          <div class="bar-label">${label}</div>
+          <div class="bar-track">
+            <div class="bar-fill" style="width:${clamp(value,0,100)}%"></div>
+          </div>
+          <div class="bar-value">${Math.round(value)}</div>
+        </div>
+      `).join("");
+    }
+
+    function renderPeers(rows) {
+      document.getElementById("peerTableBody").innerHTML = rows.map(peer => `
+        <tr>
+          <td><strong>${peer.name}</strong></td>
+          <td>₹${peer.marketCap.toLocaleString()} Cr</td>
+          <td>${peer.pe.toFixed(1)}x</td>
+          <td>${peer.roe.toFixed(1)}%</td>
+          <td>${peer.growth.toFixed(1)}%</td>
+          <td>${peer.score}</td>
+        </tr>
+      `).join("");
+    }
+
+    function renderReasons(reasons) {
+      document.getElementById("reasonsList").innerHTML = reasons.map(r => `<li>${r}</li>`).join("");
+    }
+
+    function analyze() {
+      const ticker = document.getElementById("ticker").value || "N/A";
+      const industry = document.getElementById("industry").value || "Industry";
+      const sharePrice = getNum("sharePrice");
+      const marketCap = getNum("marketCap");
+      const marketShare = getNum("marketShare");
+
+      const promoterHolding = getNum("promoterHolding");
+      const pastPromoterHolding = getNum("pastPromoterHolding");
+      const pledge = getNum("pledge");
+      const trackRecord = document.getElementById("trackRecord").value;
+      const promoterFlow = getNum("promoterFlow");
+      const governance = getNum("governance");
+
+      const buyOrders = getNum("buyOrders");
+      const sellOrders = getNum("sellOrders");
+      const spread = getNum("spread");
+      const depth = getNum("depth");
+      const fii = getNum("fii");
+      const dii = getNum("dii");
+
+      const tone = document.getElementById("tone").value;
+      const guidanceQuality = document.getElementById("guidanceQuality").value;
+      const revenueGrowth = getNum("revenueGrowth");
+      const ebitdaMargin = getNum("ebitdaMargin");
+
+      const pe = getNum("pe");
+      const industryPe = getNum("industryPe");
+      const roe = getNum("roe");
+      const epsGrowth = getNum("epsGrowth");
+      const dividendYield = getNum("dividendYield");
+      const debtEquity = getNum("debtEquity");
+
+      const competitorCount = getNum("competitorCount");
+      const leaderRevenue = getNum("leaderRevenue");
+      const screenMode = document.getElementById("screenMode").value || "balanced";
+
+      const promoterTrend = promoterHolding - pastPromoterHolding;
+
+      let promoterScore = clamp(
+        (promoterHolding / 60) * 28 +
+        (promoterTrend > 0 ? 12 : promoterTrend < 0 ? 0 : 6) +
+        (trackRecord === "excellent" ? 20 : trackRecord === "good" ? 14 : trackRecord === "average" ? 8 : 2) +
+        (governance / 100) * 16 +
+        (promoterFlow > 0 ? 8 : 0) -
+        (pledge * 1.2),
+        0, 100
+      );
+
+      let orderBookScore = clamp(
+        ((buyOrders - sellOrders) / 400) * 28 +
+        ((depth / 3000) * 20) +
+        (((fii + dii) / 600) * 18) -
+        (spread * 25),
+        0, 100
+      );
+
+      const toneMap = { very_positive: 17, positive: 13, neutral: 9, cautious: 5 };
+      const guidanceMap = { excellent: 18, good: 14, average: 9, poor: 4 };
+      let managementScore = clamp(
+        toneMap[tone] + guidanceMap[guidanceQuality] + (revenueGrowth / 20) * 14 + (ebitdaMargin / 30) * 12,
+        0, 100
+      );
+
+      const valuationGap = industryPe - pe;
+      let valuationScore = clamp(
+        18 + (valuationGap * 3) + (roe / 20) * 18 + (epsGrowth / 20) * 18 + (dividendYield * 3) - (debtEquity * 10),
+        0, 100
+      );
+
+      let competitionScore = clamp(
+        (marketShare / 35) * 32 +
+        (competitorCount < 5 ? 12 : competitorCount <= 7 ? 8 : 4) +
+        ((marketCap / leaderRevenue) * 12),
+        0, 100
+      );
+
+      if (screenMode === "growth") {
+        valuationScore *= 0.9;
+        competitionScore *= 1.05;
+      } else if (screenMode === "value") {
+        valuationScore *= 1.15;
+        promoterScore *= 0.95;
+      } else if (screenMode === "quality") {
+        promoterScore *= 1.08;
+        managementScore *= 1.1;
+      }
+
+      const overallScore = clamp(
+        promoterScore * 0.25 +
+        orderBookScore * 0.2 +
+        managementScore * 0.2 +
+        valuationScore * 0.2 +
+        competitionScore * 0.15,
+        0, 100
+      );
+
+      const category = categoryScore(overallScore);
+
+      const reasons = [];
+      if (promoterHolding > pastPromoterHolding) {
+        reasons.push(`Promoters increased from ${pastPromoterHolding.toFixed(1)}% to ${promoterHolding.toFixed(1)}%, which is constructive.`);
+      } else if (promoterHolding < pastPromoterHolding) {
+        reasons.push(`Promoter holding fell from ${pastPromoterHolding.toFixed(1)}% to ${promoterHolding.toFixed(1)}%, which adds caution.`);
+      } else {
+        reasons.push(`Promoter holding is stable, implying neutral conviction.`);
+      }
+
+      if (buyOrders - sellOrders > 0) {
+        reasons.push(`The order book is positive with net demand of ₹${(buyOrders - sellOrders).toLocaleString()} Cr.`);
+      } else {
+        reasons.push(`The order book is weak and shows net selling pressure.`);
+      }
+
+      reasons.push(`Management tone is ${tone.replace('_', ' ')} and guidance quality is ${guidanceQuality}.`);
+
+      if (pe <= industryPe) {
+        reasons.push(`The stock is reasonably valued relative to its peers.`);
+      } else {
+        reasons.push(`The stock trades above peer valuation and needs strong earnings support.`);
+      }
+
+      reasons.push(`The company owns a ${marketShare.toFixed(1)}% market share and has a competitive position that supports resilience.`);
+
+      document.getElementById("overallScore").textContent = Math.round(overallScore);
+      document.getElementById("promoterScore").textContent = Math.round(promoterScore);
+      document.getElementById("orderScore").textContent = Math.round(orderBookScore);
+      document.getElementById("managementScore").textContent = Math.round(managementScore);
+      document.getElementById("valuationScore").textContent = Math.round(valuationScore);
+      document.getElementById("competitionScore").textContent = Math.round(competitionScore);
+
+      const badge = document.getElementById("recommendationBadge");
+      badge.textContent = category.label;
+      badge.className = `recommendation ${category.className}`;
+
+      renderSummary({
+        ticker,
+        industry,
+        marketCap,
+        sharePrice,
+        pe,
+        roe,
+        promoterHolding,
+        marketShare
+      });
+
+      renderBars({
+        promoter: promoterScore,
+        orderBook: orderBookScore,
+        management: managementScore,
+        valuation: valuationScore,
+        competition: competitionScore
+      });
+
+      renderPeers([
+        { name: "Peer A", marketCap: 47000, pe: 24.8, roe: 15.4, growth: 14.5, score: 72 },
+        { name: "Peer B", marketCap: 61000, pe: 29.3, roe: 17.8, growth: 16.2, score: 78 },
+        { name: "Peer C", marketCap: 38000, pe: 21.5, roe: 14.1, growth: 13.1, score: 68 }
+      ]);
+
+      renderReasons(reasons);
+      document.getElementById("analysisResult").classList.add("visible");
+
+      addToWatchlist({
+        ticker,
+        companyName: document.getElementById("companyName").value,
+        sharePrice,
+        score: overallScore,
+        signal: category.label
+      });
+    }
+
+    function categoryScore(score) {
+      if (score >= 75) return { label: "BUY", className: "buy" };
+      if (score >= 55) return { label: "HOLD", className: "hold" };
+      return { label: "SELL", className: "sell" };
+    }
+
+    document.getElementById("analyzeBtn").addEventListener("click", analyze);
+    document.getElementById("screenBtn").addEventListener("click", () => {
+      document.getElementById("ticker").value = document.getElementById("searchTicker").value || "EXAMPLE";
+      analyze();
+    });
+    document.getElementById("demoBtn").addEventListener("click", () => {
+      const symbol = document.getElementById("searchTicker").value || "EXAMPLE";
+      loadDemoStock(symbol.toUpperCase());
+    });
+    document.getElementById("watchlistBtn").addEventListener("click", () => {
+      const current = {
+        ticker: document.getElementById("ticker").value || "UNKNOWN",
+        companyName: document.getElementById("companyName").value || "Company",
+        sharePrice: getNum("sharePrice"),
+        score: Number(document.getElementById("overallScore").textContent || 0),
+        signal: document.getElementById("recommendationBadge").textContent || "HOLD"
+      };
+      addToWatchlist(current);
+    });
+
+    renderWatchlist();
+    loadDemoStock("EXAMPLE");
+  </script>
+</body>
+</html>
