@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Market Analysis Tool</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            background: white;
+            padding: 10px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .tab-button {
+            padding: 12px 24px;
+            border: none;
+            background: #f0f0f0;
+            color: #333;
+            cursor: pointer;
+            border-radius: 5px;
+            font-size: 1em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .tab-button.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .tab-button:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .card h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .input-group input,
+        .input-group select,
+        .input-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1em;
+            font-family: inherit;
+        }
+
+        .input-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .input-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        button {
+            padding: 12px 24px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            font-size: 1em;
+        }
+
+        button:hover {
+            background: #764ba2;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .table-container {
+            overflow-x: auto;
+            margin-top: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+
+        th {
+            background: #667eea;
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        tr:hover {
+            background: #f9f9f9;
+        }
+
+        .metric-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .metric-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .metric-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+            margin-bottom: 10px;
+        }
+
+        .metric-value {
+            font-size: 1.8em;
+            font-weight: bold;
+        }
+
+        .result-container {
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            border-left: 4px solid #667eea;
+        }
+
+        .result-item {
+            margin-bottom: 15px;
+            padding: 15px;
+            background: white;
+            border-radius: 5px;
+            border-left: 4px solid #667eea;
+        }
+
+        .result-item h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .rating {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .rating-badge {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+
+        .rating-excellent {
+            background: #4caf50;
+            color: white;
+        }
+
+        .rating-good {
+            background: #8bc34a;
+            color: white;
+        }
+
+        .rating-moderate {
+            background: #ff9800;
+            color: white;
+        }
+
+        .rating-poor {
+            background: #f44336;
+            color: white;
+        }
+
+        .comparison-chart {
+            margin-top: 20px;
+        }
+
+        .chart-bar {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .chart-label {
+            width: 120px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .chart-bar-bg {
+            flex: 1;
+            height: 30px;
+            background: #e0e0e0;
+            border-radius: 5px;
+            margin: 0 10px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .chart-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 10px;
+            color: white;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+
+        .recommendation {
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            font-size: 1.1em;
+            line-height: 1.6;
+        }
+
+        .recommendation.buy {
+            background: #d4edda;
+            color: #155724;
+            border-left: 4px solid #28a745;
+        }
+
+        .recommendation.hold {
+            background: #fff3cd;
+            color: #856404;
+            border-left: 4px solid #ffc107;
+        }
+
+        .recommendation.sell {
+            background: #f8d7da;
+            color: #721c24;
+            border-left: 4px solid #f5c6cb;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-top: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .input-row {
+                grid-template-columns: 1fr;
+            }
+
+            .header h1 {
+                font-size: 1.8em;
+            }
+
+            .tabs {
+                flex-direction: column;
+            }
+
+            .tab-button {
+                width: 100%;
+            }
+        }
+
+        .success {
+            color: #4caf50;
+            font-weight: 600;
+        }
+
+        .warning {
+            color: #ff9800;
+            font-weight: 600;
+        }
+
+        .error {
+            color: #f44336;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Stock Market Analysis Tool</h1>
+            <p>Comprehensive investment analysis for informed decision making</p>
+        </div>
+
+        <div class="tabs">
+            <button class="tab-button active" onclick="switchTab('promoter')">Promoter Analysis</button>
+            <button class="tab-button" onclick="switchTab('orderbook')">Order Book</button>
+            <button class="tab-button" onclick="switchTab('conference')">Conference Calls</button>
+            <button class="tab-button" onclick="switchTab('marketcap')">Market Cap Analysis</button>
+            <button class="tab-button" onclick="switchTab('competition')">Competition Analysis</button>
+            <button class="tab-button" onclick="switchTab('dashboard')">Investment Dashboard</button>
+        </div>
+
+        <!-- Promoter Analysis Tab -->
+        <div id="promoter" class="tab-content active">
+            <div class="card">
+                <h2>👤 Promoter Holding Analysis</h2>
+                <div class="input-group">
+                    <label>Company Name</label>
+                    <input type="text" id="promoterCompany" placeholder="Enter company name">
+                </div>
+                <div class="input-row">
+                    <div class="input-group">
+                        <label>Current Promoter Holding (%)</label>
+                        <input type="number" id="currentHolding" placeholder="e.g., 45.5" step="0.1">
+                    </div>
+                    <div class="input-group">
+                        <label>Previous Holding (%)</label>
+                        <input type="number" id="previousHolding" placeholder="e.g., 50.2" step="0.1">
+                    </div>
+                </div>
+                <div class="input-row">
+                    <div class="input-group">
+                        <label>Recent Buy/Sell Orders (₹ Crore)</label>
+                        <input type="number" id="recentOrders" placeholder="Positive for buy, negative for sell">
+                    </div>
+                    <div class="input-group">
+                        <label>Pledging Status (%)</label>
+                        <input type="number" id="pledging" placeholder="e.g., 10.5" step="0.1">
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label>Promoter Track Record</label>
+                    <select id="trackRecord">
+                        <option value="">Select...</option>
+                        <option value="excellent">Excellent (Consistent growth, transparent)</option>
+                        <option value="good">Good (Steady growth, mostly transparent)</option>
+                        <option value="average">Average (Mixed performance)</option>
+                        <option value="poor">Poor (Frequent controversies)</option>
+                    </select>
+                </div>
+                <button onclick="analyzePromoter()">Analyze Promoter</button>
+
+                <div id="promoterResult" class="result-container" style="display: none;">
+                    <h3>📈 Promoter Analysis Results</h3>
+                    <div id="promoterOutput"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Order Book Tab -->
+        <div id="orderbook" class="tab-content">
+            <div class="card">
+                <h2>📋 Order Book Analysis</h2>
+                <div class="input-group">
+                    <label>Company Name</label>
+                    <input type="text" id="orderbookCompany" placeholder="Enter company name">
+                </div>
+                <div class="input-row">
+                    <div class="input-group">
+                        <label>Total Buy Orders (₹ Crore)</label>
+                        <input type="number" id="buyOrders" placeholder="e.g., 500">
+                    </div>
+                    <div class="input-group">
+                        <label>Total Sell Orders (₹ Crore)</label>
+                        <input type="number" id="sellOrders" placeholder="e.g., 400">
+                    </div>
+                </div>
+                <div class="input-row">
+                    <div class="input-group">
+                        <label>Bid-Ask Spread (%)</label>
+                        <input type="number" id="bidAskSpread" placeholder="e.g., 0.5" step="0.01">
+                    </div>
+                    <div class="input-group">
+                        <label>Order Book Depth (No. of Orders)</label>
+                        <input type="number" id="orderDepth" placeholder="e.g., 1500">
+                    </div>
+                </div>
+                <div class="input-row">
+                    <div class="input-group">
+                        <label>FII Net Position (₹ Crore)</label>
+                        <input type="number" id="fiiPosition" placeholder="Positive for buy, negative for sell">
+                    </div>
+                    <div class="input-group">
+                        <label>DII Net Position (₹ Crore)</label>
+                        <input type="number" id="diiPosition" placeholder="Positive for buy, negative for sell">
+                    </div>
+                </div>
+                <button onclick="analyzeOrderBook()">Analyze Order Book</button>
+
+                <div id="orderbookResult" class="result-container" style="display: none;">
+                    <h3>📊 Order Book Insights</h3>
+                    <div id="orderbookOutput"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Conference Calls Tab -->
+        <div id="conference" class="tab-content">
+            <div class="card">
+                <h2>🎤 Conference Call Analysis</h2>
+                <div class="input-group">
+                    <label>Company Name</label>
+                    <input type="text" id="conferenceCompany" placeholder="Enter company name">
+                </div>
+                <div class="input-group">
+                    <label>Call Date</label>
+                    <input type="date" id="callDate">
+                </div>
+                <div class="input-group">
+                    <label>Key Highlights & Guidance</label>
+                    <textarea id="callHighlights" placeholder="Summarize key points, revenue guidance, expansion plans, challenges, etc."></textarea>
+                </div>
+                <div class="input-row">
+                    <div class="input-group">
+                        <label>Revenue Growth Guidance (YoY %)</label>
+                        <input type="number" id="revenueGuidance" placeholder="e.g., 15.5" step="0.1">
+                    </div>
+                    <div class="input-group">
+                        <label>EBITDA Margin Guidance (%)</label>
+                        <input type="number" id="ebitdaGuidance" placeholder="e.g., 22.5" step="0.1">
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label>Management Tone & Confidence</label>
+                    <select id="managementTone">
+                        <option value="">Select...</option>
+                        <option value="very_positive">Very Positive (Bullish, confident)</option>
+                        <option value="positive">Positive (Optimistic)</option>
+                        <option value="neutral">Neutral (Balanced)</option>
+                        <option value="cautious">Cautious (Worried about headwinds)</option>
+                    </select>
+                </div>
+                <button onclick="analyzeConference()">Analyze Conference Call</button>
+
+                <div id="conferenceResult" class="result-container" style="display: none;">
+                    <h3>📞 Conference Call Insights</h3>
+                    <div id="conferenceOutput"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Market Cap Analysis Tab -->
+        <div id="marketcap" class="tab-content">
+            <div class="card">
+                <h2>💰 Market Cap & Valuation Analysis</h2>
+                <div class="input-group">
+                    <label>Company Name</label>
+                    <input type="text" id="capCompany" placeholder="Enter company name">
+                </div>
+                <div class="input-row">
+                    <div class="input-group">
+                        <label>Market Cap (₹ Crore)</label>
+                        <input type="number" id="marketCap" placeholder="e.g., 50000">
+                    </div>
+                    <div class="input-group">
+                        <label>Current Price (₹)</label>
+                        <input type="number" id="currentPrice" placeholder="e.g., 1500" step="0.1">
+                    </div>
+                </div>
+                <div class="input-row">
+                    <div class="input-group">
+                        <label>P/E Ratio</label>
+                        <input type="number" id="peRatio" placeholder="e.g., 25.5" step="0.1">
+                    </div>
+                    <div class="input-group">
+                        <label>Industry Average P/E</label>
+                        <input type="number" id="industryPE" placeholder="e.g., 22" step="0.1">
+                    </div>
+                </div>
+                <div class="input-row">
+                    <div class="input-group">
+                        <label>P/B Ratio</label>
+                        <input type="number" id="pbRatio" placeholder="e.g., 3.5" step="0.1">
+                    </div>
+                    <div class="input-group">
+                        <label>Dividend Yield (%)</label>
+                        <input type="number" id="dividendYield" placeholder="e.g., 2.5" step="0.1">
+                    </div>
+                </div>
+                <div class="input-row">
+                    <div class="input-group">
+                        <label>EPS Growth (TTM %)</label>
+                        <input type="number" id="epsGrowth" placeholder="e.g., 18.5" step="0.1">
+                    </div>
+                    <div class="input-group">
+                        <label>ROE (%)</label>
+                        <input type="number" id="roe" placeholder="e.g., 16.5" step="0.1">
+                    </div>
+                </div>
+                <button onclick="analyzeMarketCap()">Analyze Valuation</button>
+
+                <div id="marketcapResult" class="result-container" style="display: none;">
+                    <h3>💎 Valuation Analysis</h3>
+                    <div id="marketcapOutput"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Competition Analysis Tab -->
+        <div id="competition" class="tab-content">
+            <div class="card">
+                <h2>🏆 Competitive Analysis</h2>
+                <div class="input-group">
+                    <label>Company Name</label>
+                    <input type="text" id="companyName" placeholder="Enter company name">
+                </div>
+                <div class="input-group">
+                    <label>Market Share (%)</label>
+                    <input type="number" id="marketShare" placeholder="e.g., 22.5" step="0.1">
+                </div>
+                <div class="input-group">
+                    <label>Number of Direct Competitors</label>
+                    <input type="number" id="competitorCount" placeholder="e.g., 5">
+                </div>
+                <div class="input-group">
+                    <label>Top Competitors (comma-separated)</label>
+                    <input type="text" id="competitors" placeholder="e.g., Competitor A, Competitor B, Competitor C">
+                </div>
+                <div class="input-row">
+                    <div class="input-group">
+                        <label>Company Revenue (₹ Crore)</label>
+                        <input type="number" id="companyRevenue" placeholder="e.g., 5000">
+                    </div>
+                    <div class="input-group">
+                        <label>Market Leader Revenue (₹ Crore)</label>
+                        <input type="number" id="leaderRevenue" placeholder="e.g., 8000">
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label>Competitive Advantages</label>
+                    <textarea id="advantages" placeholder="List unique strengths: Technology, Brand, Cost efficiency, Customer loyalty, etc."></textarea>
+                </div>
+                <div class="input-group">
+                    <label>Key Risks & Challenges</label>
+                    <textarea id="risks" placeholder="Market saturation, new entrants, regulatory changes, substitute products, etc."></textarea>
+                </div>
+                <button onclick="analyzeCompetition()">Analyze Competition</button>
+
+                <div id="competitionResult" class="result-container" style="display: none;">
+                    <h3>🎯 Competitive Position</h3>
+                    <div id="competitionOutput"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Investment Dashboard Tab -->
+        <div id="dashboard" class="tab-content">
+            <div class="card">
+                <h2>📈 Investment Recommendation Dashboard</h2>
+                <p style="margin-bottom: 20px; color: #666;">Enter company data to get a comprehensive investment score and recommendation.</p>
+                
+                <div class="input-group">
+                    <label>Company Name</label>
+                    <input type="text" id="dashCompany" placeholder="Enter company name">
+                </div>
+
+                <h3 style="margin-top: 30px; margin-bottom: 20px; color: #667eea;">Quick Scores (0-100)</h3>
+                <div class="input-row">
+                    <div class="input-group">
+                        <label>Promoter Trust Score</label>
+                        <input type="number" id="trustScore" min="0" max="100" placeholder="0-100">
+                    </div>
+                    <div class="input-group">
+                        <label>Order Book Health Score</label>
+                        <input type="number" id="orderbookScore" min="0" max="100" placeholder="0-100">
+                    </div>
+                </div>
+                <div class="input-row">
+                    <div class="input-group">
+                        <label>Management Quality Score</label>
+                        <input type="number" id="managementScore" min="0" max="100" placeholder="0-100">
+                    </div>
+                    <div class="input-group">
+                        <label>Valuation Score</label>
+                        <input type="number" id="valuationScore" min="0" max="100" placeholder="0-100">
+                    </div>
+                </div>
+                <div class="input-row">
+                    <div class="input-group">
+                        <label>Competitive Moat Score</label>
+                        <input type="number" id="moatScore" min="0" max="100" placeholder="0-100">
+                    </div>
+                    <div class="input-group">
+                        <label>Growth Potential Score</label>
+                        <input type="number" id="growthScore" min="0" max="100" placeholder="0-100">
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>Investment Horizon</label>
+                    <select id="horizon">
+                        <option value="">Select...</option>
+                        <option value="short">Short Term (3-6 months)</option>
+                        <option value="medium">Medium Term (1-2 years)</option>
+                        <option value="long">Long Term (3+ years)</option>
+                    </select>
+                </div>
+
+                <div class="input-group">
+                    <label>Risk Tolerance</label>
+                    <select id="riskTolerance">
+                        <option value="">Select...</option>
+                        <option value="low">Low (Conservative, stable returns)</option>
+                        <option value="medium">Medium (Balanced growth and safety)</option>
+                        <option value="high">High (Aggressive, maximize returns)</option>
+                    </select>
+                </div>
+
+                <button onclick="generateDashboard()" style="width: 100%; margin-top: 20px;">Generate Investment Report</button>
+
+                <div id="dashboardResult" class="result-container" style="display: none;">
+                    <h3>🎯 Investment Analysis Report</h3>
+                    <div id="dashboardOutput"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="market-analysis.js"></script>
+</body>
+</html>
